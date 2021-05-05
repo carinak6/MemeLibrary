@@ -8,7 +8,25 @@ const db = mysql.createConnection({
     user: 'mmm@db-librariememe',
     database: 'db_meme_library',
     password: 'Pwd_admin_123',
+    port: 3306,
+    ssl: true
 })
+
+// const db = mysql.createConnection({
+//     host: 'localhost',
+//     user: 'root',
+//     database: 'db_meme_library',
+//     password: 'root'
+// })
+
+db.connect(function(err){
+    if(err){
+        console.log('Error connecting to Db');
+        db.end();
+    }else{
+        console.log('Connection established');
+    }
+});
 
 function getAllMemes(req, res) {
     db.connect(function(err) {
@@ -16,7 +34,8 @@ function getAllMemes(req, res) {
         db.query("SELECT * FROM memes LIMIT 10", (err, result) => {
             if (err) throw err;
             // res.json(result.rows)
-            console.log(result)
+            res.end(JSON.stringify(result.rows))
+            // console.log(result)
         })
     })
 }
