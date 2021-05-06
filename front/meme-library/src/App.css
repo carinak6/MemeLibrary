@@ -1,0 +1,104 @@
+.App {
+  text-align: center;
+  background-color: #BEC9D0;
+}
+
+.Memes-header{
+  background-color: #ADCAB2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  width: 65%;
+  margin: 1em auto;
+  border-radius: 1em;
+  padding: 1.5em;
+}
+
+#title{
+  font-size: 2rem;
+  color:#7B8A8D;
+}
+
+.user-btn {
+
+  justify-content: space-between;
+  border: none;
+  padding: .5em 2em;
+  border-radius: .8em;
+  color: #7B8A8D;
+  text-align: center;
+  text-decoration: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  margin: 1em;
+}
+
+Link{
+  text-decoration: none;
+}
+
+.user-btn:hover {
+  color:#000000;
+  background-color: #FFFFFF;
+}
+
+#Memes-container{
+  background-color: #939D95;
+  border-radius: 1em;
+  padding: 1em 0;
+  width: 95%;
+  margin: auto;
+
+}
+
+img{
+  width: 200px;
+  height: 200px;
+  margin: .6em;
+}
+
+#formUser{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 50%;
+  margin: auto;
+  padding: 3em;
+  background: #fafafa;
+  border: 1px solid #ebebeb;
+  border-radius: .8em;
+  box-shadow: rgba(0,0,0,0.14902) 0px 1px 1px 0px
+  ,rgba(0,0,0,0.09804) 0px 1px 2px 0px;
+}
+
+
+.log-input {
+  margin: 1em 0;
+  font-size: 1.3rem;
+  padding: .4em 0;
+  background: #fafafa;
+  color: #636363;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #757575;
+
+}
+
+.log-btn{
+  color: #636363;
+  width: 100%;
+  padding: .8em 1.7em;
+  border-radius: .8em;
+  background: none;
+  border: 2px solid silver;
+  font-size: 1.3rem;
+  transition: .5s;
+
+}
+
+.log-btn:hover{
+  color: white;
+  background-color: #636363;
+  }
