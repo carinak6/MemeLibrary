@@ -4,6 +4,7 @@ import { url } from 'inspector';
 
 
 type userLogin = {
+    user:string,
     mail:string;
     password:string;
 
@@ -11,17 +12,21 @@ type userLogin = {
 
 
 const LoginPage = () => {
-    const [{mail, password}, SetLoginUser] = useState<userLogin>({
+    const [{user, mail, password}, SetLoginUser] = useState<userLogin>({
+        user: '',
         mail: '',
         password: '',
 
     })
+
     const  login = async () => {
         await axios({
             method: "POST",
             data: {
+                userName: user,
                 userMail: mail,
                 userPassword: password,
+            
             },
             // withCredentials: true,
             url: 'http://localhost:4000/login'
@@ -30,12 +35,22 @@ const LoginPage = () => {
     }
     return(
 
-        <div id="formUser">
+        <div className="formUser">
+        
+        <div className="group">
+        <input className="log-input" type="text" placeholder="Name" value={user} onChange={(e) => SetLoginUser({
+            user: e.target.value,
+            mail,
+            password,
+            
+        })}/>
+        </div>
     
         <div className="group">
         <input className="log-input" type="mail" placeholder="Mail" value={mail} onChange={(e) => SetLoginUser({
             mail: e.target.value,
-            password
+            password,
+            user
         })}/>
         </div>
 
@@ -43,6 +58,7 @@ const LoginPage = () => {
         <input type="password" className="log-input" placeholder="Password" value={password}  onChange={(e) => SetLoginUser({
             password: e.target.value,
             mail,
+            user
         })}/>
         </div>
 

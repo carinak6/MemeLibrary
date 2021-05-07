@@ -87,5 +87,6 @@ dist
 
 #gitmodules
 __pycache__/
-.env
+
 .DS_Store
+.env
