@@ -1,6 +1,8 @@
 import React, {FunctionComponent, useState, useEffect, HtmlHTMLAttributes } from 'react';
 import { Map, setOriginalNode } from 'typescript';
 import { map } from 'rxjs/operators';
+import LoginPage from './loginComponent'
+
 
 type memeAPI = {
     id:string;
@@ -8,9 +10,16 @@ type memeAPI = {
     url:string;
     array?: Array<string>
     }
+type tokenAuth = {
+  token:string,
+  setToken:string,
+}
   
   const DisplayMeme = () => {
     const [Memes, SetMemes] = useState<memeAPI[]>([]);
+    const [token, setToken] = useState<tokenAuth>();
+
+  
     
     // useEffect(()=> {
   
