@@ -1,14 +1,13 @@
-import React, {FunctionComponent, useState, useEffect, HtmlHTMLAttributes } from 'react';
-import { Map, setOriginalNode } from 'typescript';
-import { map } from 'rxjs/operators';
-import LoginPage from './loginComponent'
+import React, {useState, useEffect} from 'react';
+import axios from 'axios'
 
 
 type memeAPI = {
     id:string;
-    name:string;
-    url:string;
-    array?: Array<string>
+    title:string;
+    images:{
+      original:
+      {url:string}}
     }
 type tokenAuth = {
   token:string,
@@ -19,35 +18,25 @@ type tokenAuth = {
     const [Memes, SetMemes] = useState<memeAPI[]>([]);
     const [token, setToken] = useState<tokenAuth>();
 
+// `http://api.giphy.com/v1/gifs/trending?api_key=${process.env.REACT_APP_GIPHY_KEY}&limit=100`
   
-    
-    // useEffect(()=> {
-  
-    //   const asynFuncAPI = async() => {
-        
-        
-    //     const res = await axios.get("https://api.imgflip.com/get_memes");
-    //     SetMemes(res.data.memes)
-   
-    //    } 
-    // }, [])
-  
-    useEffect(() => {
-      fetch("https://api.imgflip.com/get_memes").then(x =>
-        x.json().then(response => SetMemes(response.data.memes))
+    useEffect(() => {      
+      fetch(`http://api.giphy.com/v1/gifs/trending?api_key=76792192255c42c3a11c58ea1acfbe27&limit=100`)
+      .then(x =>
+        x.json().then(response => SetMemes(response.data))
       );
     }, []);
   
    return (
     <div className="App">
    
-  <section id="Memes-container">
+  <section className="Memes-container">
 
    <div className="Memes-img">
         
     {Memes.map(meme => {
   
-      return <img key={meme.id} src={meme.url} alt={meme.name}/>
+      return <img key={meme.id} src={meme.images.original.url} alt={meme.title}/>
   
       })
     }
