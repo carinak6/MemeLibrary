@@ -44,12 +44,12 @@ Link{
   background-color: #FFFFFF;
 }
 
-#Memes-container{
+.Memes-container{
   background-color: #939D95;
   border-radius: 1em;
   padding: 1em 0;
   width: 95%;
-  margin: auto;
+  margin: 1em auto;
 
 }
 
@@ -108,4 +108,11 @@ img{
 .title-meme-dashbord{
   font-size: 2rem;
   color:#636363;
+}
+
+#uploading{
+  text-align: center;
+  color: #fafafa;
+  margin: 1em 0;
+  font-size: 4rem;
 }

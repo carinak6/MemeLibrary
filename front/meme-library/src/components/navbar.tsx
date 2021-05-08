@@ -12,17 +12,23 @@ const Nav = ()=> {
     </div>
     
     <div className="btn">
-    <Link to="/"><button className="user-btn" id="register">
+    <Link to="/"><button className="user-btn" id="home">
             Home
         </button></Link>
-        <Link to="/login"><button className="user-btn" id="register">
+        <Link to="/Register"><button className="user-btn" id="register">
+            Register
+        </button> 
+    </Link>
+        <Link to="/login"><button className="user-btn" id="Login">
             Login
         </button>
         </Link>
-        <Link to="/dashboard"><button className="user-btn" id="register">
+        <Link to="/dashboard"><button className="user-btn" id="dashboard">
             My Meme
         </button> 
     </Link>
+
+    
         {/* <button className="user-btn" id="login">
             Login
         </button> */}
