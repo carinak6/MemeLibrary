@@ -4,6 +4,7 @@ import mysql from 'mysql';
 //import bodyParser from 'body-parser';
 var bodyParser = require("body-parser");
 import bcrypt from 'bcrypt';
+import jwt from "jsonwebtoken";
 //const bcrypt = require('bcrypt');
 
 require('dotenv').config()
@@ -37,13 +38,42 @@ const connection = mysql.createConnection({
   
 app.use( bodyParser.urlencoded({ extended: true }) );
 
+/* function middleware pour l utiliser dans toutes les routes*/
+const authentification=(req, res, next) =>{
+
+  console.log('Entra à authentification');
+
+  try{
+      /* pour chaque route cote front il faudra envoyer le token */
+      //localhost:3500/addMeme?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c
+      const {token} = req.query; //on recupere le token qui est en parametre dans req, on utilise{}
+      //pour donner au nom de la variable le meme que du parametre en req 
+
+      console.log('-------- token authentification : ',token);
+
+      //verifier le token avec jwt
+      const decoded = jwt.verify(token, process.env.KEY_JWT);
+      console.log(decoded.id); //doit retourner l id de l'utilisateur
+      console.log('OK authentification');
+      next();
+
+  }catch(err){
+     console.log(err);
+     res.send(err);
+  }
+    
+
+}
+
 app.get('/', (req, res, next) => {
    res.send('On est connecté, VAMOS!!!');
 });
 
 /* formulaire Ajouter un meme */
-app.get('/addMeme', (req, res, next) => {
-  
+app.get('/addMeme',(req, res, next) => {
+
+  console.log('route Addmeme');
+
   res.send(`<!DOCTYPE html>
   <html lang="fr">
   <head>
@@ -54,7 +84,8 @@ app.get('/addMeme', (req, res, next) => {
   </head>
   <body>
          <h1> Ajouter un meme  </h1>
-          <form action="/api/add/meme" method="post">
+        <!-- il faut envoyer le token dans action aussi--> 
+          <form action="/api/add/meme?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c" method="post">
               Nom : <input type="text" name="meme" id="">
               URL : <input type="text" name="url" id="">
               user (il sera cache) : <input type="text" name="user" id="">
@@ -72,7 +103,7 @@ app.route('/api/add/meme')
         console.log('GET request de la route add');
         //next();
     })
-    .post(function (req, res) {
+    .post(authentification,function (req, res) {
         console.log(JSON.stringify(req.body)); //recupere tous les parametres        
 
         const name= req.body.meme;
@@ -91,8 +122,8 @@ app.route('/api/add/meme')
         
     });
 
-/** Affiche tous les memes*/
-app.get('/api/allMemes', async (req, res, next) => {      
+/** Affiche tous les memes --> authentification?? je croit pas */
+app.get('/api/allMemes',async (req, res, next) => {      
         
       const query = "SELECT * FROM memes";
       connection.query( query, function (err, results, fields) {
@@ -107,7 +138,7 @@ app.get('/api/allMemes', async (req, res, next) => {
 })
 
 //quand on demande sur un meme en particuliere par ID, au cas où
-app.get('/api/meme/:id', function (req, res) { 
+app.get('/api/meme/:id', authentification, function (req, res) { 
   //console.log(JSON.stringify(req.body)); //recupere tous les parametres
   //console.log(req.url);
   console.log(req.params.id);
@@ -142,7 +173,7 @@ app.get('/addUser', (req, res, next) => {
   </head>
   <body>  
           <h1>Nouveau utilisateur</h1>
-          <form action="/api/add/user" method="post">
+          <form action="/api/add/user?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c" method="post">
               Nom : <input type="text" name="name" id="">
               Identfiant : <input type="text" name="email" id="">
               Password : <input type="text" name="pwd" id="">              
@@ -200,14 +231,16 @@ app.get('/login', (req, res, next) => {
   </html>`);  
 });
 
+
+
 /* Verification si l'user est bien enregistre dans la BDD*/
 app.route('/api/login/')  
   .post(function (req, res) {
       const mail= req.body.identifiant;
       const pwd= req.body.pwd;
-      console.log(mail);
-          
+      console.log(mail);       
       
+
       connection.query('SELECT * FROM users WHERE mail = ? ', [mail], 
         function (err, results, fields) {
             if (err) throw err;
@@ -217,15 +250,22 @@ app.route('/api/login/')
                 //version synchrone
                 if (bcrypt.compareSync(pwd, results[0]['pwd'])) {
                       //res.send("Bienvenue "+results[0]['name'])
-                      res.json({'id':results[0]['id'], 'mail': results[0]['mail'], 'name' :results[0]['name']});
+                      
+                      //res.json({'id':results[0]['id'], 'mail': results[0]['mail'], 'name' :results[0]['name']});
+                      
+                      /*on crée un token, foo: 'bar' ==>la data dans le tocken, faire attention avec, et 'shhhhh' la cle, il faut
+                      le garder dans les secrets, dans les variable d'environements, pas le laiser dans le front */
+                      const token = jwt.sign({id : results[0]['id']}, process.env.KEY_JWT);
+                      /*token reste dans le serveur pour verifier les connexions*/
+                      console.log('token : ',token);
+                      res.send(token); //il faudra le recuperer dans le front et le stocker dans le localstorage
+
                 } else {
-                      //res.send("Mots incorrecte !! pour l'email "+results[0]['mail'])
-                      res.json({'results':'Mots de passe incorrect'});
-                }     
+                      res.send("Mots incorrecte !! pour l'email "+results[0]['mail'])
+                }  
               
             }else{
-              //res.send('Inexistante');
-              res.json({'results':'Inexistante'});
+              res.send('Inexistante');
             }
             
       });
@@ -250,7 +290,6 @@ app.get('/api/allUsers', async (req, res, next) => {
 
 })
 
-/* on demarre le serveur il ecoute dans le port defini avant  */
 app.listen(port, () => {
   //   if (err) {
   //     console.error(err); //return 
