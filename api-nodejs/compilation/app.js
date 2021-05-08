@@ -28,7 +28,7 @@ app.use(cors_1.default());
 const port = 3500;
 const storage = multer_1.default.memoryStorage();
 const upload = multer_1.default({ storage: storage });
-function upload_file(filename, content_file, filetype) {
+function upload_file(filename, content_file, filetype, n_user) {
     return __awaiter(this, void 0, void 0, function* () {
         const account = "mmmstorageaccount";
         const accountKey = "n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ==";
@@ -39,6 +39,9 @@ function upload_file(filename, content_file, filetype) {
         const blobName = filename;
         const blockBlobClient = containerClient.getBlockBlobClient(blobName);
         const uploadBlobResponse = yield blockBlobClient.upload(content, Buffer.byteLength(content), { blobHTTPHeaders: { blobContentType: filetype } });
+        const metadataProperties = {};
+        metadataProperties.user_id = n_user;
+        containerClient.getBlobClient(filename).setMetadata(metadataProperties);
         console.log(`Upload block blob ${blobName} successfully`, uploadBlobResponse.requestId);
     });
 }
@@ -73,6 +76,7 @@ connection.connect(function (err) {
         // If you're also serving http, display a 503 error.
     }
 });
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.get('/', (req, res, next) => {
     res.send('On est connecté, VAMOS!!!');
@@ -116,7 +120,7 @@ app.get('/addMemeTest', (req, res, next) => {
 });
 app.post('/upload', upload.single('keyform'), (req, res) => {
     console.log(req.file);
-    upload_file(req.file['originalname'], req.file['buffer'], req.file['mimetype']);
+    upload_file(req.file['originalname'], req.file['buffer'], req.file['mimetype'], req.body['user_id']);
     res.send('ok');
 });
 //gestionnaires de routage pour ajouter un meme

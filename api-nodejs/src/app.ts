@@ -21,7 +21,7 @@ const storage = multer.memoryStorage();
 const upload = multer({storage: storage})
 
 
-async function upload_file(filename: string, content_file: Buffer, filetype: string) {
+async function upload_file(filename: string, content_file: Buffer, filetype: string, n_user: string) {
   const account = "mmmstorageaccount"
   const accountKey = "n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ=="
   const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey)
@@ -31,6 +31,9 @@ async function upload_file(filename: string, content_file: Buffer, filetype: str
   const blobName = filename;
   const blockBlobClient = containerClient.getBlockBlobClient(blobName);
   const uploadBlobResponse = await blockBlobClient.upload(content, Buffer.byteLength(content), {blobHTTPHeaders: {blobContentType: filetype}});
+  const metadataProperties: { [user_id: string]: string } = {};
+  metadataProperties.user_id = n_user
+  containerClient.getBlobClient(filename).setMetadata( metadataProperties )
   console.log(`Upload block blob ${blobName} successfully`, uploadBlobResponse.requestId);
 
 }
@@ -71,7 +74,7 @@ const connection = mysql.createConnection({
     } 
   }); 
 
-  
+app.use(bodyParser.json());
 app.use( bodyParser.urlencoded({ extended: true }) );
 
 app.get('/', (req, res, next) => {
@@ -120,7 +123,7 @@ app.get('/addMemeTest', (req, res, next) => {
 
 app.post('/upload', upload.single('keyform'), (req, res) => {
   console.log(req.file)
-  upload_file(req.file['originalname'], req.file['buffer'], req.file['mimetype'])
+  upload_file(req.file['originalname'], req.file['buffer'], req.file['mimetype'], req.body['user_id'])
   res.send('ok')
 })
 
