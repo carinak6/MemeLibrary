@@ -1,16 +1,53 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import mysql from 'mysql';
-//const mysql = require('mysql');
+import cors from 'cors';
 //import bodyParser from 'body-parser';
 var bodyParser = require("body-parser");
 import bcrypt from 'bcrypt';
-//const bcrypt = require('bcrypt');
+// import * as multer from 'multer'
+import multer from 'multer'
+import { BlobServiceClient, BlobDownloadResponseModel, StorageSharedKeyCredential, BlockBlobClient } from "@azure/storage-blob"
+// import multer, { Multer } from 'multer'
+
 
 require('dotenv').config()
 
 
 const app = express();
+app.use(cors())
 const port = 3500;
+
+const storage = multer.memoryStorage();
+const upload = multer({storage: storage})
+
+
+async function upload_file(filename: string, content_file: Buffer, filetype: string) {
+  const account = "mmmstorageaccount"
+  const accountKey = "n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ=="
+  const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey)
+  const blobServiceClient = new BlobServiceClient(`https://${account}.blob.core.windows.net`, sharedKeyCredential)
+  const containerClient = blobServiceClient.getContainerClient('memes');
+  const content = content_file;
+  const blobName = filename;
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+  const uploadBlobResponse = await blockBlobClient.upload(content, Buffer.byteLength(content), {blobHTTPHeaders: {blobContentType: filetype}});
+  console.log(`Upload block blob ${blobName} successfully`, uploadBlobResponse.requestId);
+
+}
+
+
+
+// const azureStorage: MulterAzureStorage = new MulterAzureStorage({
+//   connectionString: "DefaultEndpointsProtocol=https;AccountName=mmmstorageaccount;AccountKey=n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ==;EndpointSuffix=core.windows.net",
+//   accessKey: "n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ==",
+//   accountName: "mmmstorageaccount",
+//   containerName: "memes",
+  // blobName: resolveBlobName,
+  // metadata: resolveMetadata,
+//   containerAccessLevel: 'blob',
+//   urlExpirationTime: 60
+// });
+
 
 /* connexion à la BDD */
 const connection = mysql.createConnection({
@@ -54,15 +91,39 @@ app.get('/addMeme', (req, res, next) => {
   </head>
   <body>
          <h1> Ajouter un meme  </h1>
-          <form action="/api/add/meme" method="post">
-              Nom : <input type="text" name="meme" id="">
-              URL : <input type="text" name="url" id="">
-              user (il sera cache) : <input type="text" name="user" id="">
+          <form action="/api/add/meme" method="post" enctype="multipart/form-data">
+              Your File : <input type="file" name="file" value="file" />
+              <input type="hidden" name="user_id" value="1" />
               <button type="submit">Envoyer</button>
       </form>
   </body>
   </html>`);  
 });
+
+app.get('/addMemeTest', (req, res, next) => {
+  res.send(`<!DOCTYPE html>
+  <html lang="fr">
+  <head>
+  
+      <title>Formulaire</title>
+  </head>
+  <body>
+         <h1> Ajouter un meme  </h1>
+          <form action="/upload" method="post" enctype="multipart/form-data">
+              Your File : <input type="file" name="keyform" value="file" />
+              <input type="hidden" name="user_id" value="1" />
+              <button type="submit">Envoyer</button>
+      </form>
+  </body>
+  </html>`);  
+});
+
+app.post('/upload', upload.single('keyform'), (req, res) => {
+  console.log(req.file)
+  upload_file(req.file['originalname'], req.file['buffer'], req.file['mimetype'])
+  res.send('ok')
+})
+
 
 
 //gestionnaires de routage pour ajouter un meme

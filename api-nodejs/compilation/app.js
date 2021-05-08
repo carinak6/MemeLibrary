@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -13,14 +14,44 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const mysql_1 = __importDefault(require("mysql"));
-//const mysql = require('mysql');
+const cors_1 = __importDefault(require("cors"));
 //import bodyParser from 'body-parser';
 var bodyParser = require("body-parser");
 const bcrypt_1 = __importDefault(require("bcrypt"));
-//const bcrypt = require('bcrypt');
+// import * as multer from 'multer'
+const multer_1 = __importDefault(require("multer"));
+const storage_blob_1 = require("@azure/storage-blob");
+// import multer, { Multer } from 'multer'
 require('dotenv').config();
 const app = express_1.default();
+app.use(cors_1.default());
 const port = 3500;
+const storage = multer_1.default.memoryStorage();
+const upload = multer_1.default({ storage: storage });
+function upload_file(filename, content_file, filetype) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const account = "mmmstorageaccount";
+        const accountKey = "n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ==";
+        const sharedKeyCredential = new storage_blob_1.StorageSharedKeyCredential(account, accountKey);
+        const blobServiceClient = new storage_blob_1.BlobServiceClient(`https://${account}.blob.core.windows.net`, sharedKeyCredential);
+        const containerClient = blobServiceClient.getContainerClient('memes');
+        const content = content_file;
+        const blobName = filename;
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+        const uploadBlobResponse = yield blockBlobClient.upload(content, Buffer.byteLength(content), { blobHTTPHeaders: { blobContentType: filetype } });
+        console.log(`Upload block blob ${blobName} successfully`, uploadBlobResponse.requestId);
+    });
+}
+// const azureStorage: MulterAzureStorage = new MulterAzureStorage({
+//   connectionString: "DefaultEndpointsProtocol=https;AccountName=mmmstorageaccount;AccountKey=n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ==;EndpointSuffix=core.windows.net",
+//   accessKey: "n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ==",
+//   accountName: "mmmstorageaccount",
+//   containerName: "memes",
+// blobName: resolveBlobName,
+// metadata: resolveMetadata,
+//   containerAccessLevel: 'blob',
+//   urlExpirationTime: 60
+// });
 /* connexion à la BDD */
 const connection = mysql_1.default.createConnection({
     host: process.env.DB_HOST,
@@ -58,14 +89,35 @@ app.get('/addMeme', (req, res, next) => {
   </head>
   <body>
          <h1> Ajouter un meme  </h1>
-          <form action="/api/add/meme" method="post">
-              Nom : <input type="text" name="meme" id="">
-              URL : <input type="text" name="url" id="">
-              user (il sera cache) : <input type="text" name="user" id="">
+          <form action="/api/add/meme" method="post" enctype="multipart/form-data">
+              Your File : <input type="file" name="file" value="file" />
+              <input type="hidden" name="user_id" value="1" />
               <button type="submit">Envoyer</button>
       </form>
   </body>
   </html>`);
+});
+app.get('/addMemeTest', (req, res, next) => {
+    res.send(`<!DOCTYPE html>
+  <html lang="fr">
+  <head>
+  
+      <title>Formulaire</title>
+  </head>
+  <body>
+         <h1> Ajouter un meme  </h1>
+          <form action="/upload" method="post" enctype="multipart/form-data">
+              Your File : <input type="file" name="keyform" value="file" />
+              <input type="hidden" name="user_id" value="1" />
+              <button type="submit">Envoyer</button>
+      </form>
+  </body>
+  </html>`);
+});
+app.post('/upload', upload.single('keyform'), (req, res) => {
+    console.log(req.file);
+    upload_file(req.file['originalname'], req.file['buffer'], req.file['mimetype']);
+    res.send('ok');
 });
 //gestionnaires de routage pour ajouter un meme
 app.route('/api/add/meme')
@@ -89,7 +141,7 @@ app.route('/api/add/meme')
     console.log('POST request de la route add');
 });
 /** Affiche tous les memes*/
-app.get('/api/allMemes', (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+app.get('/api/allMemes', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const query = "SELECT * FROM memes";
     connection.query(query, function (err, results, fields) {
         if (err) {
@@ -212,7 +264,7 @@ app.route('/api/login/')
     console.log('POST request de la route add');
 });
 //on affiche tous les utilisateurs  
-app.get('/api/allUsers', (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+app.get('/api/allUsers', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     console.log('Entra au endpoint all user');
     const query = "SELECT * FROM users ";
     connection.query(query, (error, results) => {
