@@ -1,0 +1,10 @@
+name: Deployment
+on:
+    push:
+        branches: [az-function-3M]
+jobs:
+    first_test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Test word
+              run: echo "hello world"
