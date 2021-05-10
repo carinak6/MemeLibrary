@@ -1,11 +1,17 @@
 import express from 'express';
 import mysql from 'mysql';
+import cors from 'cors'
 //const mysql = require('mysql');
 //import bodyParser from 'body-parser';
-var bodyParser = require("body-parser");
+const bodyParser = require("body-parser");
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
 //const bcrypt = require('bcrypt');
+import multer from 'multer'
+import { BlobServiceClient, StorageSharedKeyCredential } from "@azure/storage-blob"
+
+const storage = multer.memoryStorage();
+const upload = multer({storage: storage})
 
 require('dotenv').config()
 
@@ -26,55 +32,68 @@ const connection = mysql.createConnection({
   /* verification de la connexion à la BDD*/
   connection.connect(function(err) {              // The server is either down
     if(err) {                                     // or restarting (takes a while sometimes).
-      console.log('error when connecting to db:', err);
+      console.log('CARINA ==> error when connecting to db:', err);
       connection.end();
       //mysql_handleDisconnect(); // We introduce a delay before attempting to reconnect,
     }else{                                    // to avoid a hot loop, and to allow our node script to
-        console.log('Connection established BRAVO!!!');// process asynchronous requests in the meantime.
-                                                // If you're also serving http, display a 503 error.
+        console.log('Connection established !!');
     } 
   }); 
 
-  
+app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }) );
+app.use(cors())
 
-/* function middleware pour l utiliser dans toutes les routes*/
-const authentification=(req, res, next) =>{
+app.use(function(req, res, next) {
+  // Website you wish to allow to connect
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
 
-  console.log('Entra à authentification');
+// Request methods you wish to allow
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
 
-  try{
-      /* pour chaque route cote front il faudra envoyer le token */
-      //localhost:3500/addMeme?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c
-      const {token} = req.query; //on recupere le token qui est en parametre dans req, on utilise{}
-      //pour donner au nom de la variable le meme que du parametre en req 
+// Request headers you wish to allow
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
 
-      console.log('-------- token authentification : ',token);
 
-      //verifier le token avec jwt
-      const decoded = jwt.verify(token, process.env.KEY_JWT);
-      console.log(decoded.id); //doit retourner l id de l'utilisateur
-      console.log('OK authentification');
-      next();
 
-  }catch(err){
-     console.log(err);
-     res.send(err);
-  }
-    
+// Pass to next layer of middleware
+  next();
+});
+
+
+async function upload_file(filename: string, content_file: Buffer, filetype: string, n_user: string) {
+  const account = "mmmstorageaccount"
+  const accountKey = "n/1EsO8u7lMZnjw6TqPm607DuPXTMxXD5qY9CRpFA8DVyCAfZhb/VlES4/1XyJ7zzuGOxcg70Pn2GBXtmsZ/kQ=="
+  const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey)
+  const blobServiceClient = new BlobServiceClient(`https://${account}.blob.core.windows.net`, sharedKeyCredential)
+  const containerClient = blobServiceClient.getContainerClient('memes');
+  const content = content_file;
+  const blobName = filename;
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+  const uploadBlobResponse = await blockBlobClient.upload(content, Buffer.byteLength(content), {blobHTTPHeaders: {blobContentType: filetype}});
+  // ajouter la metadata
+  const metadataProperties: { [user_id: string]: string } = {};
+  metadataProperties.user_id = n_user
+  // fin ajouter la metadata
+  containerClient.getBlobClient(filename).setMetadata( metadataProperties )
+  console.log(`Upload block blob ${blobName} successfully`, uploadBlobResponse.requestId);
 
 }
 
+app.post('/upload', upload.single('keyform'), (req:multer, res) => {
+  console.log(req.file)
+  upload_file(req.file['originalname'], req.file['buffer'], req.file['mimetype'], req.body['user_id'])
+  res.send('ok')
+})
+
 /* function middleware pour l utiliser dans toutes les routes*/
 const authentification=(req, res, next) =>{
 
   console.log('Entra à authentification');
 
   try{
-      /* pour chaque route cote front il faudra envoyer le token */
-      //localhost:3500/addMeme?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c
-      const {token} = req.query; //on recupere le token qui est en parametre dans req, on utilise{}
-      //pour donner au nom de la variable le meme que du parametre en req 
+      
+      const {token} = req.query; 
 
       console.log('-------- token authentification : ',token);
 
@@ -96,41 +115,9 @@ app.get('/', (req, res, next) => {
    res.send('On est connecté, VAMOS!!!');
 });
 
-/* formulaire Ajouter un meme */
-app.get('/addMeme',(req, res, next) => {
-
-  console.log('route Addmeme');
-
-  res.send(`<!DOCTYPE html>
-  <html lang="fr">
-  <head>
-      <meta charset="UTF-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Formulaire</title>
-  </head>
-  <body>
-         <h1> Ajouter un meme  </h1>
-        <!-- il faut envoyer le token dans action aussi--> 
-          <form action="/api/add/meme?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c" method="post">
-              Nom : <input type="text" name="meme" id="">
-              URL : <input type="text" name="url" id="">
-              user (il sera cache) : <input type="text" name="user" id="">
-              <button type="submit">Envoyer</button>
-      </form>
-  </body>
-  </html>`);  
-});
-
 
 //gestionnaires de routage pour ajouter un meme
-app.route('/api/add/meme')
-    .get(function(req, res) {
-        res.send('partie Get de la route ajoute');
-        console.log('GET request de la route add');
-        //next();
-    })
-    .post(authentification,function (req, res) {
+app.post('/api/add/meme', authentification, (req, res) => {
         console.log(JSON.stringify(req.body)); //recupere tous les parametres        
 
         const name= req.body.meme;
@@ -147,7 +134,8 @@ app.route('/api/add/meme')
         //res.send('POST request ADD sur la BDD');
         console.log('POST request de la route add');
         
-    });
+    }
+);
 
 /** Affiche tous les memes --> authentification?? je croit pas */
 app.get('/api/allMemes',async (req, res, next) => {      
@@ -186,96 +174,44 @@ app.get('/api/meme/:id', authentification, function (req, res) {
 });
 
 
-/* Formulaire pour Ajouter un utilisateur */
-app.get('/addUser', (req, res, next) => {
-  //res.send('Nos conectamos VAMOS!!!');
-  //res.redirect('./src/index.html');
-  res.send(`<!DOCTYPE html>
-  <html lang="fr">
-  <head>
-      <meta charset="UTF-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Formulaire</title>
-  </head>
-  <body>  
-          <h1>Nouveau utilisateur</h1>
-          <form action="/api/add/user?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c" method="post">
-              Nom : <input type="text" name="name" id="">
-              Identfiant : <input type="text" name="email" id="">
-              Password : <input type="text" name="pwd" id="">              
-              <button type="submit">Envoyer</button>
-          </form>
-  </body>
-  </html>`);
-  //next();
-});
 
 //gestionnaires de routage pour ajouter un utilisateur
 //une autre maniere de creer une route qui donne l'option d'utiliser un methode get et post pour la meme route
-app.route('/api/add/user')    
-    .post(function (req, res) {
+app.post('/api/add/user', async(req, res) => {
         console.log(JSON.stringify(req.body)); //recupere tous les parametres
-        console.log(req.body.name);
-        const name= req.body.name; //userName sur React
-        const mail = req.body.email; //userMail
-        const pwd = req.body.pwd; //userPassword
+        console.log('this is req.body.user',req.body.user);
+
+        const user= req.body.user; //userName sur React
+        const mail = req.body.mail; //userMail
+        const password = req.body.password; //userPassword
         
         /**mode synchrone, encrypte le password */
-        let psw_encr = bcrypt.hashSync(pwd, 10);
+        const salt =  await bcrypt.genSalt(10); 
+        let psw_encr = bcrypt.hashSync(password, salt);
        
+      connection.query('INSERT INTO users (name, mail,pwd) VALUES (?, ?, ?);', [user, mail, psw_encr], 
+        function (err, results) {
+          console.log('POST request de la route add'),
+          console.log('done')
+          //res.send({ results });
+      })
 
-      connection.query('INSERT INTO users (name, mail,pwd) VALUES (?, ?, ?);', [name, mail,psw_encr], 
-        function (err, results, fields) {
-            if (err) throw err;
-            console.log('Inserted ' + results.affectedRows + ' row(s).');
-            res.json({results});
-      });
-        
-               
-        console.log('POST request de la route add');       
-    });
-
-
-/** Formulaire login */
-app.get('/login', (req, res, next) => {
-  
-  res.send(`<!DOCTYPE html>
-  <html lang="fr">
-  <head>
-      <meta charset="UTF-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Formulaire</title>
-  </head>
-  <body>
-          <form action="/api/login/" method="post">
-              Identfiant : <input type="text" name="identifiant" id="">
-              Password : <input type="text" name="pwd" id="">              
-              <button type="submit">Envoyer</button>
-      </form>
-  </body>
-  </html>`);  
-});
-
-
-
+  }
+)
 /* Verification si l'user est bien enregistre dans la BDD*/
-app.route('/api/login/')  
-  .post(function (req, res) {
+app.post('/api/login/',(req, res) => {
       const mail= req.body.identifiant;
       const pwd= req.body.pwd;
-      console.log(mail);       
+      console.log(mail);
       
 
       connection.query('SELECT * FROM users WHERE mail = ? ', [mail], 
         function (err, results, fields) {
             if (err) throw err;
-            console.log('Trouvé : ' + JSON.stringify(results) + ' .');
+            console.log('Trouvé : ' + JSON.stringify(results) + ' .'); 
 
             if(results[0] != undefined){
                 //version synchrone
-
                 if (bcrypt.compareSync(pwd, results[0]['pwd'])) {
                       //res.send("Bienvenue "+results[0]['name'])
                       
@@ -300,7 +236,8 @@ app.route('/api/login/')
       
       //res.send('POST request ADD sur la BDD');
       console.log('POST request de la route add');
-  });
+  }
+);
 
 //on affiche tous les utilisateurs  
 app.get('/api/allUsers', async (req, res, next) => {
@@ -313,12 +250,11 @@ app.get('/api/allUsers', async (req, res, next) => {
             res.json({status : "not found"})
           }
           console.log({results})
-          res.json({ results });
+          //res.json({ results });
         });
 
 })
 
-//on affiche tous les memes par un utilisateur  
 app.get('/api/memesUser/:id', async (req, res, next) => {
   
   console.log('Entra au endpoint memes par user');
@@ -336,17 +272,9 @@ app.get('/api/memesUser/:id', async (req, res, next) => {
         // }
         
   });
-  
-  const query = "SELECT * FROM users "
-  connection.query(query, (error, results) => {
-      if(!results[0]){
-        res.json({status : "not found"})
-      }
-      console.log({results})
-      res.json({ results });
-    });
 
 })
+
 
 app.listen(port, () => {
   //   if (err) {
