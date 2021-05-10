@@ -22,16 +22,12 @@ const Nav = ()=> {
         <Link to="/login"><button className="user-btn" id="Login">
             Login
         </button>
-        </Link>
-        <Link to="/dashboard"><button className="user-btn" id="dashboard">
-            My Meme
-        </button> 
+    </Link>
+    <Link to="/dashboard"><button className="user-btn">
+        Dashboard
+        </button>
     </Link>
 
-    
-        {/* <button className="user-btn" id="login">
-            Login
-        </button> */}
     </div>
 
   </header> 
