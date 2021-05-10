@@ -26,7 +26,7 @@ const connection = mysql.createConnection({
   /* verification de la connexion à la BDD*/
   connection.connect(function(err) {              // The server is either down
     if(err) {                                     // or restarting (takes a while sometimes).
-      console.log('CARINA ==> error when connecting to db:', err);
+      console.log('error when connecting to db:', err);
       connection.end();
       //mysql_handleDisconnect(); // We introduce a delay before attempting to reconnect,
     }else{                                    // to avoid a hot loop, and to allow our node script to
@@ -36,7 +36,34 @@ const connection = mysql.createConnection({
   }); 
 
   
-app.use( bodyParser.urlencoded({ extended: true }) );
+app.use(bodyParser.urlencoded({ extended: true }) );
+
+/* function middleware pour l utiliser dans toutes les routes*/
+const authentification=(req, res, next) =>{
+
+  console.log('Entra à authentification');
+
+  try{
+      /* pour chaque route cote front il faudra envoyer le token */
+      //localhost:3500/addMeme?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c
+      const {token} = req.query; //on recupere le token qui est en parametre dans req, on utilise{}
+      //pour donner au nom de la variable le meme que du parametre en req 
+
+      console.log('-------- token authentification : ',token);
+
+      //verifier le token avec jwt
+      const decoded = jwt.verify(token, process.env.KEY_JWT);
+      console.log(decoded.id); //doit retourner l id de l'utilisateur
+      console.log('OK authentification');
+      next();
+
+  }catch(err){
+     console.log(err);
+     res.send(err);
+  }
+    
+
+}
 
 /* function middleware pour l utiliser dans toutes les routes*/
 const authentification=(req, res, next) =>{
@@ -248,6 +275,7 @@ app.route('/api/login/')
 
             if(results[0] != undefined){
                 //version synchrone
+
                 if (bcrypt.compareSync(pwd, results[0]['pwd'])) {
                       //res.send("Bienvenue "+results[0]['name'])
                       
@@ -287,6 +315,36 @@ app.get('/api/allUsers', async (req, res, next) => {
           console.log({results})
           res.json({ results });
         });
+
+})
+
+//on affiche tous les memes par un utilisateur  
+app.get('/api/memesUser/:id', async (req, res, next) => {
+  
+  console.log('Entra au endpoint memes par user');
+  console.log(req.params.id);
+  const id_user =req.params.id;
+
+  connection.query('SELECT m.* FROM memes m , users u WHERE u.id = m.user_id AND u.id = ? ',[id_user], 
+    function (err, results, fields) {
+        if (err) throw err;
+       // if(results != undefined){
+          console.log('Recupere : ' + JSON.stringify(results));
+          res.json({results});
+        // }else{
+        //   res.send("Memes inexistante !!") ;
+        // }
+        
+  });
+  
+  const query = "SELECT * FROM users "
+  connection.query(query, (error, results) => {
+      if(!results[0]){
+        res.json({status : "not found"})
+      }
+      console.log({results})
+      res.json({ results });
+    });
 
 })
 
