@@ -4,7 +4,6 @@ import { url } from 'inspector';
 
 
 type userLogin = {
-    user:string,
     mail:string;
     password:string;
 
@@ -12,8 +11,7 @@ type userLogin = {
 
 
 const LoginPage = () => {
-    const [{user, mail, password}, SetLoginUser] = useState<userLogin>({
-        user: '',
+    const [{mail, password}, SetLoginUser] = useState<userLogin>({
         mail: '',
         password: '',
 
@@ -23,7 +21,6 @@ const LoginPage = () => {
         await axios({
             method: "POST",
             data: {
-                userName: user,
                 userMail: mail,
                 userPassword: password,
             
@@ -36,29 +33,20 @@ const LoginPage = () => {
     return(
 
         <div className="formUser">
-        
+    
         <div className="group">
-        <input className="log-input" type="text" placeholder="Name" value={user} onChange={(e) => SetLoginUser({
-            user: e.target.value,
-            mail,
+        <input className="log-input" type="mail" placeholder="Mail" name="mail" value={mail} onChange={(e) => SetLoginUser({
+            mail: e.target.value,
             password,
             
         })}/>
         </div>
-    
-        <div className="group">
-        <input className="log-input" type="mail" placeholder="Mail" value={mail} onChange={(e) => SetLoginUser({
-            mail: e.target.value,
-            password,
-            user
-        })}/>
-        </div>
 
         <div className="group">
-        <input type="password" className="log-input" placeholder="Password" value={password}  onChange={(e) => SetLoginUser({
+        <input type="password" className="log-input" placeholder="Password" name="password" value={password}  onChange={(e) => SetLoginUser({
             password: e.target.value,
             mail,
-            user
+            
         })}/>
         </div>
 

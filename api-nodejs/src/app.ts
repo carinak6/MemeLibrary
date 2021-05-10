@@ -65,6 +65,33 @@ const authentification=(req, res, next) =>{
 
 }
 
+/* function middleware pour l utiliser dans toutes les routes*/
+const authentification=(req, res, next) =>{
+
+  console.log('Entra à authentification');
+
+  try{
+      /* pour chaque route cote front il faudra envoyer le token */
+      //localhost:3500/addMeme?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiaWF0IjoxNjIwNDgxNTczfQ.sbfs4zqJ-b2LeZ0XsDrkgwbJpFPk-JdxF8A5moq_77c
+      const {token} = req.query; //on recupere le token qui est en parametre dans req, on utilise{}
+      //pour donner au nom de la variable le meme que du parametre en req 
+
+      console.log('-------- token authentification : ',token);
+
+      //verifier le token avec jwt
+      const decoded = jwt.verify(token, process.env.KEY_JWT);
+      console.log(decoded.id); //doit retourner l id de l'utilisateur
+      console.log('OK authentification');
+      next();
+
+  }catch(err){
+     console.log(err);
+     res.send(err);
+  }
+    
+
+}
+
 app.get('/', (req, res, next) => {
    res.send('On est connecté, VAMOS!!!');
 });
@@ -248,7 +275,11 @@ app.route('/api/login/')
 
             if(results[0] != undefined){
                 //version synchrone
-                if (bcrypt.compareSync(pwd, results[0]['pwd'])) {                      
+
+                if (bcrypt.compareSync(pwd, results[0]['pwd'])) {
+                      //res.send("Bienvenue "+results[0]['name'])
+                      
+                      //res.json({'id':results[0]['id'], 'mail': results[0]['mail'], 'name' :results[0]['name']});
                       
                       /*on crée un token, foo: 'bar' ==>la data dans le tocken, faire attention avec, et 'shhhhh' la cle, il faut
                       le garder dans les secrets, dans les variable d'environements, pas le laiser dans le front */
