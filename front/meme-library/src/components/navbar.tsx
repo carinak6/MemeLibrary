@@ -1,8 +1,13 @@
-import React, {FunctionComponent, useState, useEffect, HtmlHTMLAttributes } from 'react';
 import { BrowserRouter as Router, Link } from 'react-router-dom';
-import { Routes } from '../Route'; 
+import AuthService from '../auth.service';
 
 const Nav = ()=> {
+    const currentUser = AuthService.getCurrentUser()
+    const logOut = () => {
+        AuthService.logout()
+        window.location.reload()
+    }
+
     return (
         <div>
 
@@ -19,15 +24,21 @@ const Nav = ()=> {
             Register
         </button> 
     </Link>
-        <Link to="/login"><button className="user-btn" id="Login">
-            Login
-        </button>
-    </Link>
+        { currentUser && (
     <Link to="/dashboard"><button className="user-btn">
         Dashboard
         </button>
     </Link>
+)}
 
+{ currentUser ? (
+    <Link to="/login"><button onClick={logOut} className="user-btn">
+        LogOut</button>
+        </Link>
+): ( <Link to="/login"><button className="user-btn" id="Login">
+            Login
+        </button>
+    </Link>)}
     </div>
 
   </header> 

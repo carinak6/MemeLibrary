@@ -32,7 +32,8 @@ const RegisterPage = () => {
             };
 
             //Requete post au back qui sera changé pour le lien Azure
-            await axios.post("http://localhost:3500/api/add/user", data)
+            await axios.post("http://localhost:3500/api/add/user", data);
+            window.location.reload();
 
         } catch (err) {
             console.error(err) 
@@ -67,7 +68,7 @@ const RegisterPage = () => {
             user
         })}/>
         </div>
-        <button className="user-btn" type="submit" > Login </button>
+        <button className="user-btn" type="submit" > Register </button>
         {/* <Link to="/dashboard"><button className="user-btn" type="submit" > Login</button></Link> */}
 
         </form>

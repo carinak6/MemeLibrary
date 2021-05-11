@@ -1,6 +1,5 @@
-import React, {FunctionComponent, useState, useEffect, HtmlHTMLAttributes } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios'
-import { url } from 'inspector';
 
 
 type userLogin = {
@@ -28,8 +27,16 @@ const LoginPage = () => {
                 password
             };
 
-            //Requete post au back qui sera changé pour le lien Azure
-            await axios.post("http://localhost:3500/api/login", data)
+           //Requete post au back qui sera changé pour le lien Azure
+            await axios.post("http://localhost:3500/api/login", data).then(response => {
+                if (response.data) {
+                    console.log(response.data);
+                    localStorage.setItem("user", JSON.stringify(response.data));
+                }
+                return response.data;
+            })
+
+            window.location.href = "/dashboard";
 
         } catch (err) {
             console.error(err) 
