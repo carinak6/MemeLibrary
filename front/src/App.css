@@ -15,6 +15,11 @@
     padding: 1.5em;
 }
 
+.Memes-header a.active button {
+    color: #fff;
+    background-color: #7b8a8d;
+}
+
 #title {
     font-size: 2rem;
     color: #7b8a8d;
@@ -112,6 +117,11 @@ img {
 .log-btn:hover {
     color: white;
     background-color: #636363;
+}
+
+div.formUser > form > div:nth-child(3) {
+    display: flex;
+    justify-content: center;
 }
 
 .title-meme-dashbord {

@@ -4,7 +4,7 @@
   "description": "",
   "main": "compilation/app.js",
   "scripts": {
-    "start": "tsc && node compilation/app.js",
+    "start": "tsc && node compilation/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,13 +19,11 @@
     "@azure/storage-blob": "^12.5.0",
     "azure": "^2.3.1-preview",
     "bcrypt": "^5.0.1",
-    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^8.5.1",
     "express": "^4.16.4",
     "jsonwebtoken": "^8.5.1",
     "multer": "^1.4.2",
-    "mysql": "^2.18.1",
-    "mysql2": "^2.2.5"
+    "mysql": "^2.18.1"
   }
 }
